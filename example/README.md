@@ -2,7 +2,6 @@
 
 ## Author
 
-- ![](http://cdn.androidftp.top/pic/chenxuanweb/dog.png)
 
 ## 仓库地址
 
