@@ -1,7 +1,7 @@
 # obsidian2web
 
 ## Author
-quandang
+quandang123
 
 ## 仓库地址
 
