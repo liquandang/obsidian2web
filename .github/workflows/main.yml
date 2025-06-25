@@ -1,0 +1,70 @@
+# 文件名: .github/workflows/sync-external-lib.yml
+name: Sync obsidian notes into Subdirectory
+
+on:
+  schedule:
+    # 每天凌晨 3 点执行一次 (可以根据需求调整 cron 表达式)
+    - cron: '0 * * 3 *'
+  workflow_dispatch:
+    # 允许在 Actions 页面手动触发此工作流
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    
+    # 定义环境变量，方便修改
+    env:
+      # 源仓库地址 (需要同步的仓库)
+      SOURCE_REPO: 'liquandang/obsidian'
+      # 源仓库的分支
+      SOURCE_BRANCH: 'main'
+      # 目标仓库中存放代码的子目录
+      TARGET_DIR: 'example'
+
+    steps:
+      # 步骤 1: 签出当前的目标仓库
+      - name: Checkout Target Repo
+        uses: actions/checkout@v4
+        with:
+          # 我们需要推送代码，所以需要一个有写权限的 Token
+          token: ${{ secrets.PAT_FOR_SYNC }}
+
+      # 步骤 2: 将源仓库的代码签出到一个临时文件夹中
+      - name: Checkout Source Repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.SOURCE_REPO }}
+          ref: ${{ env.SOURCE_BRANCH }}
+          # 将源仓库代码放到名为 'source_temp' 的临时文件夹中
+          path: 'source_temp'
+
+      # 步骤 3: 同步文件
+      - name: Sync files from source to target directory
+        run: |
+          echo "Syncing from ${{ env.SOURCE_REPO }} into directory ${{ env.TARGET_DIR }}"
+          
+          # 创建目标目录 (如果不存在)
+          mkdir -p ${{ env.TARGET_DIR }}
+          
+          # 清空目标目录，以确保删除源仓库中已删除的文件
+          # 注意：这会删除 ${{ env.TARGET_DIR }} 下的所有内容！
+          echo "Cleaning target directory..."
+          rm -rf ${{ env.TARGET_DIR }}/*
+          
+          # 将源仓库的内容复制到目标目录
+          # 注意 rsync 的用法，它能很好地处理文件夹内容复制
+          echo "Copying new files..."
+          rsync -av --delete source_temp/ ${{ env.TARGET_DIR }}/
+          
+      # 步骤 4: 检查更改并自动提交
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: Sync latest code from ${{ env.SOURCE_REPO }}"
+          commit_user_name: "GitHub Actions Bot"
+          commit_user_email: "actions@github.com"
+          # 只监控目标文件夹的变化
+          file_pattern: ${{ env.TARGET_DIR }}/**/*
+          commit_options: '--no-verify' # 跳过 pre-commit 钩子 (如果你的项目有的话)
+          repository: '.' # 提交到当前仓库
+          push_options: '--force' # 可选：如果你希望强制推送覆盖历史，但通常不建议
