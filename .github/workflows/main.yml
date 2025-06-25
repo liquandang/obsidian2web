@@ -3,8 +3,8 @@ name: Sync obsidian notes into Subdirectory
 
 on:
   schedule:
-    # 每天凌晨 3 点执行一次 (可以根据需求调整 cron 表达式)
-    - cron: '*/5 * * * *'
+    # 每5分钟执行一次 (可以根据需求调整 cron 表达式)
+    - cron: '*/60 * * * *'
   workflow_dispatch:
     # 允许在 Actions 页面手动触发此工作流
 
